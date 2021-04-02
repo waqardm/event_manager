@@ -20,15 +20,39 @@ def clean_phone_number(phone_number)
   end
 end
 
-def clean_date(time)
+def get_hour(time)
   DateTime.strptime(time, '%m/%d/%y %H:%M').hour
 end
 
-def most_active_hour(arr)
-  hour_counts = arr.each_with_object(Hash.new(0)) do |hour, new_hash|
-   new_hash[hour] += 1
+def weekday_finder(time)
+  date = DateTime.strptime(time, '%m/%d/%y %H:%M').cwday
+  case date
+  when 1 
+    'Monday'
+  when  2
+    'Tuesday'
+  when 3
+    'Wednesday'
+  when 4
+    'Thursday'
+  when 5
+    'Friday'
+  when 6
+    'Saturday'
+  when 7
+    'Sunday'
   end
-  return hour_counts.each { |k, v| puts "Most active hour is: #{k}, where #{v} people registered" if v == hour_counts.values.max }
+end
+
+def most_active_hour(arr, hour_or_day)
+  counts = arr.each_with_object(Hash.new(0)) do |count, new_hash|
+   new_hash[count] += 1
+  end
+  if hour_or_day == "hour"
+    return counts.each { |k, v| puts "Most active hour is: #{k}, where #{v} people registered" if v == counts.values.max }
+  elsif hour_or_day == "day"
+    return counts.each { |k, v| puts "Most active day is: #{k}, where #{v} people registered" if v == counts.values.max }
+  end
 end
 
 def legislators_by_zipcode(zipcode)
@@ -68,15 +92,18 @@ template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
 hours = []
+weekdays = []
 
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
   phone_number = row[:homephone]
 
-  reg_date_hour_finder = clean_date(row[:regdate])
+  reg_date_hour_finder = get_hour(row[:regdate])
+  weekday_finder = weekday_finder(row[:regdate])
 
   hours << reg_date_hour_finder
+  weekdays << weekday_finder
   
   phone_number = clean_phone_number(phone_number)
 
@@ -89,4 +116,5 @@ contents.each do |row|
   # save_thank_you_letter(id, form_letter)
 end
 
-most_active_hour(hours)
+most_active_hour(hours, 'hour')
+most_active_hour(weekdays, 'day')
